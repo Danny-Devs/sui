@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
+import { resolve } from 'path';
+import vue from '@vitejs/plugin-vue';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [vue()],
@@ -8,7 +8,7 @@ export default defineConfig({
 		lib: {
 			entry: resolve(__dirname, 'src/index.ts'),
 			name: 'VuiKit',
-			fileName: 'index'
+			fileName: 'index',
 		},
 		rollupOptions: {
 			external: ['vue', '@tanstack/vue-query', '@mysten/sui', '@mysten/wallet-standard'],
@@ -17,12 +17,12 @@ export default defineConfig({
 					vue: 'Vue',
 					'@tanstack/vue-query': 'VueQuery',
 					'@mysten/sui': 'SuiSDK',
-					'@mysten/wallet-standard': 'WalletStandard'
-				}
-			}
-		}
+					'@mysten/wallet-standard': 'WalletStandard',
+				},
+			},
+		},
 	},
 	test: {
-		environment: 'jsdom'
-	}
-})
+		environment: 'jsdom',
+	},
+});

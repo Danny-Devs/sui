@@ -38,24 +38,24 @@ import { VuiProvider, WalletProvider, ConnectButton } from '@mysten/vui-kit'
 
 ```typescript
 // Wallet Management
-const { currentWallet, connect, disconnect } = useCurrentWallet()
-const { currentAccount } = useCurrentAccount()
-const { wallets } = useWallets()
+const { currentWallet, connect, disconnect } = useCurrentWallet();
+const { currentAccount } = useCurrentAccount();
+const { wallets } = useWallets();
 
 // Blockchain Queries
-const { data: balance } = useBalance({ address })
-const { data: objects } = useOwnedObjects({ owner })
-const { data: txn } = useTransactionBlock({ digest })
+const { data: balance } = useBalance({ address });
+const { data: objects } = useOwnedObjects({ owner });
+const { data: txn } = useTransactionBlock({ digest });
 
 // Transactions
-const { mutate: signAndExecute } = useSignAndExecuteTransaction()
-const { mutate: signMessage } = useSignPersonalMessage()
+const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+const { mutate: signMessage } = useSignPersonalMessage();
 ```
 
 ## Architecture
 
 - **Composables** - Vue 3 reactive blockchain interactions
-- **Components** - Headless, accessible UI components  
+- **Components** - Headless, accessible UI components
 - **Stores** - Pinia-powered state management
 - **Providers** - Vue plugins for easy setup
 - **Types** - Full TypeScript support
