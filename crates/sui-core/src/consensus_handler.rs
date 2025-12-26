@@ -704,10 +704,15 @@ impl CommitHandlerState {
                     // Generate randomness for this commit if DKG is successful and we are still
                     // accepting certs.
                     if self.initial_reconfig_state.should_accept_tx() {
-                        randomness_manager
-                            // TODO: make infallible
+                        match randomness_manager
                             .reserve_next_randomness(commit_info.timestamp, &mut self.output)
-                            .expect("epoch ended")
+                        {
+                            Ok(round) => round,
+                            Err(_) => {
+                                debug!("Epoch ended during reserve_next_randomness");
+                                None
+                            }
+                        }
                     } else {
                         None
                     }
@@ -1707,11 +1712,13 @@ impl<C: CheckpointServiceNotify + Send + Sync> ConsensusHandler<C> {
             randomness_dkg_confirmations,
         );
 
-        if randomness_dkg_updates || randomness_dkg_confirmation_updates {
-            randomness_manager
+        if (randomness_dkg_updates || randomness_dkg_confirmation_updates)
+            && randomness_manager
                 .advance_dkg(&mut state.output, commit_info.round)
                 .await
-                .expect("epoch ended");
+                .is_err()
+        {
+            debug!("Epoch ended during advance_dkg");
         }
     }
 
@@ -1728,10 +1735,10 @@ impl<C: CheckpointServiceNotify + Send + Sync> ConsensusHandler<C> {
         for (authority, bytes) in randomness_dkg_messages {
             match bcs::from_bytes(&bytes) {
                 Ok(message) => {
-                    randomness_manager
-                        .add_message(&authority, message)
-                        // TODO: make infallible
-                        .expect("epoch ended");
+                    if randomness_manager.add_message(&authority, message).is_err() {
+                        debug!("Epoch ended during add_message");
+                        break;
+                    }
                     randomness_state_updated = true;
                 }
 
@@ -1761,10 +1768,13 @@ impl<C: CheckpointServiceNotify + Send + Sync> ConsensusHandler<C> {
         for (authority, bytes) in randomness_dkg_confirmations {
             match bcs::from_bytes(&bytes) {
                 Ok(message) => {
-                    randomness_manager
+                    if randomness_manager
                         .add_confirmation(&mut state.output, &authority, message)
-                        // TODO: make infallible
-                        .expect("epoch ended");
+                        .is_err()
+                    {
+                        debug!("Epoch ended during add_confirmation");
+                        break;
+                    }
                     randomness_state_updated = true;
                 }
                 Err(e) => {
