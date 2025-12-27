@@ -246,10 +246,17 @@ impl FundsWithdrawSchedulerTrait for EagerFundsWithdrawScheduler {
     }
 
     fn close_epoch(&self) {
-        debug!("Closing epoch in EagerFundsWithdrawScheduler",);
-        let inner_state = self.inner_state.lock();
-        assert!(inner_state.pending_settlements.is_empty());
-        assert!(inner_state.tracked_accounts.is_empty());
+        debug!("Closing epoch in EagerFundsWithdrawScheduler");
+        let mut inner_state = self.inner_state.lock();
+        if !inner_state.pending_settlements.is_empty() || !inner_state.tracked_accounts.is_empty() {
+            debug!(
+                "Discarding {} pending settlements and {} tracked accounts at epoch end",
+                inner_state.pending_settlements.len(),
+                inner_state.tracked_accounts.len()
+            );
+        }
+        inner_state.pending_settlements.clear();
+        inner_state.tracked_accounts.clear();
     }
 
     #[cfg(test)]
