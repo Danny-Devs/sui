@@ -449,9 +449,13 @@ impl CheckpointExecutor {
                     ?round,
                     "notifying RandomnessReporter that randomness update was executed in checkpoint"
                 );
-                randomness_reporter
+                if randomness_reporter
                     .notify_randomness_in_checkpoint(round)
-                    .expect("epoch cannot have ended");
+                    .is_err()
+                {
+                    debug!("Epoch ended during randomness notification");
+                    break;
+                }
             }
         }
 
@@ -464,9 +468,14 @@ impl CheckpointExecutor {
 
         finish_stage!(pipeline_handle, UpdateRpcIndex);
 
-        self.global_state_hasher
+        if self
+            .global_state_hasher
             .accumulate_running_root(&self.epoch_store, seq, ckpt_state.state_hasher)
-            .expect("Failed to accumulate running root");
+            .is_err()
+        {
+            debug!("Epoch ended during running root accumulation");
+            return is_final_checkpoint;
+        }
 
         if is_final_checkpoint {
             self.checkpoint_store
@@ -620,11 +629,10 @@ impl CheckpointExecutor {
         // The early versions of the hasher (prior to effectsv2) rely on db
         // state, so we must wait until all transactions have been executed
         // before accumulating the checkpoint.
-        ckpt_state.state_hasher = Some(
-            self.global_state_hasher
-                .accumulate_checkpoint(&tx_data.effects, sequence_number, &self.epoch_store)
-                .expect("epoch cannot have ended"),
-        );
+        ckpt_state.state_hasher = self
+            .global_state_hasher
+            .accumulate_checkpoint(&tx_data.effects, sequence_number, &self.epoch_store)
+            .ok();
 
         finish_stage!(pipeline_handle, FinalizeTransactions);
 
