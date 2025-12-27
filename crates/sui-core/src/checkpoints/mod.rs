@@ -1185,9 +1185,13 @@ impl CheckpointStateHasher {
                 info!("Object state hasher was dropped, stopping checkpoint accumulation");
                 break;
             };
-            hasher
+            if hasher
                 .accumulate_checkpoint(&effects, seq, &epoch_store)
-                .expect("epoch ended while accumulating checkpoint");
+                .is_err()
+            {
+                debug!("Epoch ended during checkpoint accumulation");
+                break;
+            }
         }
     }
 }
@@ -1325,8 +1329,7 @@ impl CheckpointBuilder {
         // Collect info about the most recently built checkpoint.
         let summary = self
             .epoch_store
-            .last_built_checkpoint_builder_summary()
-            .expect("epoch should not have ended");
+            .last_built_checkpoint_builder_summary()?;
         let mut last_height = summary.clone().and_then(|s| s.checkpoint_height);
         let mut last_timestamp = summary.map(|s| s.summary.timestamp_ms);
 
@@ -2601,10 +2604,7 @@ impl CheckpointAggregator {
                 self.current.as_mut().unwrap()
             };
 
-            let epoch_tables = self
-                .epoch_store
-                .tables()
-                .expect("should not run past end of epoch");
+            let epoch_tables = self.epoch_store.tables()?;
             let iter = epoch_tables
                 .pending_checkpoint_signatures
                 .safe_iter_with_bounds(
